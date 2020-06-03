@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "",
   "scripts": {
+    "dev": "webpack-dev-server",
     "test": "jest --colors"
   },
   "repository": {
@@ -20,13 +21,18 @@
     "testURL": "http://localhost/"
   },
   "dependencies": {
+    "axios": "^0.19.2",
     "bootstrap": "^4.5.0",
     "jquery": "^3.5.1",
-    "popper.js": "^1.16.1"
+    "lodash": "^4.17.15",
+    "on-change": "^2.0.1",
+    "popper.js": "^1.16.1",
+    "yup": "^0.29.1"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
+    "@types/yup": "^0.29.1",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^25.2.6",
     "babel-loader": "^8.1.0",
