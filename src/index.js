@@ -6,11 +6,14 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import _ from 'lodash';
 import axios from 'axios';
+import i18next from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
 const rssFormEl = document.getElementById('rss-form');
 const rssFormInputEl = document.getElementById('rss-form-input');
 const channelsEl = document.getElementById('channels');
 const feedEl = document.getElementById('feed');
+const languageSelectorEl = document.getElementById('language-selector');
 
 // Renderers
 
@@ -123,3 +126,54 @@ rssFormEl.onsubmit = (e) => {
 // MOUNT
 
 renderRSSForm(state.forms.rss);
+
+// ========================================
+// i18n
+
+const EN = 'en';
+const RU = 'ru';
+
+const lngs = [EN, RU];
+const fallbackLng = EN;
+
+const resources = {
+  [EN]: {
+    translation: {
+      key: 'hello world',
+    },
+  },
+  [RU]: {
+    translation: {
+      key: 'привет мир',
+    },
+  },
+};
+
+const names = {
+  [EN]: 'English',
+  [RU]: 'Русский',
+};
+
+i18next
+  .use(LanguageDetector)
+  .init({
+    debug: true,
+    fallbackLng,
+    resources,
+  }).then(() => {
+    const languageOptionsHTML = lngs.map((code) => {
+      return code === i18next.language
+        ? `<option value="${code}" selected>${names[code]}</option>`
+        : `<option value="${code}">${names[code]}</option>`;
+    });
+    languageSelectorEl.innerHTML = languageOptionsHTML.join('');
+
+    const updateTexts = () => {
+      document.getElementById('output').innerHTML = i18next.t('key');
+    };
+
+    languageSelectorEl.onchange = (e) => i18next.changeLanguage(e.target.value);
+    i18next.on('languageChanged', updateTexts);
+
+    updateTexts();
+  });
