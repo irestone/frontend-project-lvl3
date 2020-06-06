@@ -105,17 +105,19 @@ rssFormEl.onsubmit = (e) => {
     const doc = parser.parseFromString(response.data, 'application/xml');
 
     const channel = {
+      id: _.uniqueId('channel'),
+      url: state.forms.rss.data.url,
       title: _.trim(doc.querySelector('channel > title').textContent),
       description: _.trim(doc.querySelector('channel > description').textContent),
       link: _.trim(doc.querySelector('channel > link').textContent),
-      url: state.forms.rss.data.url,
     };
 
     const items = [...doc.querySelectorAll('item')].map((itemEl) => ({
+      channelId: channel.id,
+      id: _.trim(itemEl.querySelector('guid').textContent),
       title: _.trim(itemEl.querySelector('title').textContent),
       description: _.trim(itemEl.querySelector('description').textContent),
       link: _.trim(itemEl.querySelector('link').textContent),
-      pubDate: new Date(_.trim(itemEl.querySelector('pubDate').textContent)),
     }));
 
     state.channels = [channel, ...state.channels];
@@ -126,6 +128,39 @@ rssFormEl.onsubmit = (e) => {
 // MOUNT
 
 renderRSSForm(state.forms.rss);
+
+const watchRSS = () => {
+  setTimeout(() => {
+    const requests = state.channels.map((channel) => {
+      return axios.get(channel.url).then((response) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(response.data, 'application/xml');
+
+        const items = [...doc.querySelectorAll('item')].map((itemEl) => ({
+          channelId: channel.id,
+          id: _.trim(itemEl.querySelector('guid').textContent),
+          title: _.trim(itemEl.querySelector('title').textContent),
+          description: _.trim(itemEl.querySelector('description').textContent),
+          link: _.trim(itemEl.querySelector('link').textContent),
+        }));
+
+        const newItems = _.differenceBy(
+          items,
+          state.feed,
+          (item) => item.channelId + item.id,
+        );
+
+        if (newItems.length) {
+          state.feed = [...newItems, ...state.feed];
+        }
+      });
+    });
+
+    Promise.all(requests).then(watchRSS);
+  }, 5000);
+};
+
+watchRSS();
 
 // ========================================
 // i18n
@@ -169,7 +204,7 @@ i18next
     languageSelectorEl.innerHTML = languageOptionsHTML.join('');
 
     const updateTexts = () => {
-      document.getElementById('output').innerHTML = i18next.t('key');
+      // document.getElementById('output').innerHTML = i18next.t('key');
     };
 
     languageSelectorEl.onchange = (e) => i18next.changeLanguage(e.target.value);
