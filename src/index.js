@@ -6,107 +6,113 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import _ from 'lodash';
 import axios from 'axios';
-import i18next from 'i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+
+import i18n, { init as i18nInit } from './i18n';
 
 const rssFormEl = document.getElementById('rss-form');
 const rssFormInputEl = document.getElementById('rss-form-input');
+const rssFormSubmitButtonEl = document.getElementById('rss-form-submit-button');
 const channelsEl = document.getElementById('channels');
 const feedEl = document.getElementById('feed');
-const languageSelectorEl = document.getElementById('language-selector');
 
-// Renderers
+// =====================================
+//  RENDERERS
+// =====================================
 
-const renderRSSForm = (rssFormState) => {
-  rssFormInputEl.value = rssFormState.data.url;
+const renderRSSForm = (state) => {
+  rssFormInputEl.value = state.data.url;
 
-  if (rssFormState.state === 'invalid' && !_.isEmpty(rssFormState.data.url)) {
+  // todo: states - submitted (block field, loader instead of button)
+
+  if (state.state === 'initial' || !state.isValid) {
+    rssFormSubmitButtonEl.setAttribute('disabled', true);
+  } else {
+    rssFormSubmitButtonEl.removeAttribute('disabled');
+  }
+
+  if (state.state === 'filling' && !state.isValid) {
     rssFormInputEl.classList.add('is-invalid');
+    // show errors
   } else {
     rssFormInputEl.classList.remove('is-invalid');
   }
 };
 
-const renderChannels = (channelsState) => {
-  const channelsHTML = channelsState.map(({ title, description, link }) => [
+const renderChannels = (state) => {
+  const channelsHTML = state.channels.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,
   ].join(''));
   channelsEl.innerHTML = channelsHTML.join('<hr>');
-  // console.log(channelsState);
 };
 
-const renderFeed = (feedState) => {
-  const feedHTML = feedState.map(({ title, description, link }) => [
+const renderPosts = (state) => {
+  const postsHTML = state.posts.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,
   ].join(''));
-  feedEl.innerHTML = feedHTML.join('<hr>');
-  // console.log(feedState);
+  feedEl.innerHTML = postsHTML.join('<hr>');
 };
 
-// State
+// =====================================
+//  STATE
+// =====================================
 
-const state = onChange({
-  forms: {
-    rss: {
-      state: 'valid',
-      data: {
-        url: 'https://ru.hexlet.io/lessons.rss',
-      },
-    },
+const rssFormState = onChange({
+  state: 'initial', // initial, filling, submitted ... ? succeeded, failed
+  isValid: false,
+  errors: [],
+  data: {
+    url: 'https://ru.hexlet.io/lessons.rss',
   },
+}, () => renderRSSForm(rssFormState));
+
+const channelsState = onChange({
   channels: [],
-  feed: [],
-}, (path) => {
-  if (path.startsWith('forms.rss')) {
-    renderRSSForm(state.forms.rss);
-    return;
-  }
+}, () => renderChannels(channelsState));
 
-  if (path === 'channels') {
-    renderChannels(state.channels);
-    return;
-  }
+const postsState = onChange({
+  posts: [],
+}, () => renderPosts(postsState));
 
-  if (path === 'feed') {
-    renderFeed(state.feed);
-  }
-});
+// todo: ui state with notification: state (success/fail), text
 
-// Controllers
+// =====================================
+//  CONTROLLERS
+// =====================================
 
 // todo: custom yup validation of duplication (e.g. .rssLink())
+// todo: validate the whole 'data' object (schema.isValid(rssFormState.data))
 const schema = yup.string().required().url();
 const validateRSSForm = () => {
-  state.forms.rss.state = schema.isValidSync(state.forms.rss.data.url)
-    && !state.channels.some(({ url }) => url === state.forms.rss.data.url)
-    ? 'valid'
-    : 'invalid';
+  rssFormState.isValid = schema.isValidSync(rssFormState.data.url)
+    && !channelsState.channels.some(({ url }) => url === rssFormState.data.url);
 };
 
 rssFormInputEl.oninput = (e) => {
-  state.forms.rss.data.url = e.target.value;
+  rssFormState.data.url = e.target.value;
+  rssFormState.state = _.isEmpty(rssFormState.data.url) ? 'initial' : 'filling';
   validateRSSForm();
 };
 
 rssFormEl.onsubmit = (e) => {
   e.preventDefault();
-
   validateRSSForm();
 
-  if (state.forms.rss.state === 'invalid') {
+  if (!rssFormState.isValid) {
     return;
   }
 
+  rssFormState.state = 'submitted';
+
   // todo: cors
-  axios.get(state.forms.rss.data.url).then((response) => {
+  axios.get(rssFormState.data.url).then((response) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(response.data, 'application/xml');
 
     const channel = {
       id: _.uniqueId('channel'),
-      url: state.forms.rss.data.url,
+      url: rssFormState.data.url,
       title: _.trim(doc.querySelector('channel > title').textContent),
       description: _.trim(doc.querySelector('channel > description').textContent),
       link: _.trim(doc.querySelector('channel > link').textContent),
@@ -120,18 +126,18 @@ rssFormEl.onsubmit = (e) => {
       link: _.trim(itemEl.querySelector('link').textContent),
     }));
 
-    state.channels = [channel, ...state.channels];
-    state.feed = [...items, ...state.feed];
+    // todo: notify(success, `Feed ${channel.name} has been successfully added`)
+
+    channelsState.channels = [channel, ...channelsState.channels];
+    postsState.posts = [...items, ...postsState.posts];
+  }).catch(() => {
+    // todo: notify(fail, `Error occured when tried adding ${channel.name}`)
   });
 };
 
-// MOUNT
-
-renderRSSForm(state.forms.rss);
-
 const watchRSS = () => {
   setTimeout(() => {
-    const requests = state.channels.map((channel) => {
+    const requests = channelsState.channels.map((channel) => {
       return axios.get(channel.url).then((response) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(response.data, 'application/xml');
@@ -146,12 +152,12 @@ const watchRSS = () => {
 
         const newItems = _.differenceBy(
           items,
-          state.feed,
+          postsState.posts,
           (item) => item.channelId + item.id,
         );
 
         if (newItems.length) {
-          state.feed = [...newItems, ...state.feed];
+          postsState.posts = [...newItems, ...postsState.posts];
         }
       });
     });
@@ -160,55 +166,10 @@ const watchRSS = () => {
   }, 5000);
 };
 
-watchRSS();
-
-// ========================================
-// i18n
-
-const EN = 'en';
-const RU = 'ru';
-
-const lngs = [EN, RU];
-const fallbackLng = EN;
-
-const resources = {
-  [EN]: {
-    translation: {
-      key: 'hello world',
-    },
-  },
-  [RU]: {
-    translation: {
-      key: 'привет мир',
-    },
-  },
-};
-
-const names = {
-  [EN]: 'English',
-  [RU]: 'Русский',
-};
-
-i18next
-  .use(LanguageDetector)
-  .init({
-    debug: true,
-    fallbackLng,
-    resources,
-  }).then(() => {
-    const languageOptionsHTML = lngs.map((code) => {
-      return code === i18next.language
-        ? `<option value="${code}" selected>${names[code]}</option>`
-        : `<option value="${code}">${names[code]}</option>`;
-    });
-    languageSelectorEl.innerHTML = languageOptionsHTML.join('');
-
-    const updateTexts = () => {
-      // document.getElementById('output').innerHTML = i18next.t('key');
-    };
-
-    languageSelectorEl.onchange = (e) => i18next.changeLanguage(e.target.value);
-    i18next.on('languageChanged', updateTexts);
-
-    updateTexts();
-  });
+// Mount
+validateRSSForm();
+renderRSSForm(rssFormState);
+renderChannels(channelsState);
+renderPosts(postsState);
+watchRSS(); // todo: watch when there are channels to watch
+i18nInit(i18n);
