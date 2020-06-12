@@ -1,55 +1,78 @@
 import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-const languageSelectorEl = document.getElementById('language-selector');
-
-const EN = 'en';
-const RU = 'ru';
-
-const lngs = [EN, RU];
-const fallbackLng = EN;
-
 const resources = {
-  [EN]: {
+  en: {
     translation: {
-      key: 'hello world',
+      pageTitle: 'RSS Reader',
+      title: 'RSS Reader',
+      lead: 'Start reading RSS today! It is easy, it is nicely.',
+      rssForm: {
+        url: {
+          placeholder: 'rss link',
+          errors: {
+            notUnique: 'Channel with that url is already in the list',
+          },
+        },
+        submit: 'Add',
+        feedback: {
+          succeeded: 'Channel has been added to the list',
+          failed: 'Unexpected error occurred',
+        },
+      },
+      channels: {
+        title: 'Channels',
+      },
+      posts: {
+        title: 'Posts',
+      },
     },
   },
-  [RU]: {
+  ru: {
     translation: {
-      key: 'привет мир',
+      pageTitle: 'RSS Reader',
+      title: 'RSS Reader',
+      lead: 'Начните читать RSS сегодня! Это легко, это приятно.',
+      rssForm: {
+        url: {
+          placeholder: 'ссылка на rss',
+          errors: {
+            notUnique: 'Канал с такой ссылкой уже есть в списке',
+          },
+        },
+        submit: 'Добавить',
+        feedback: {
+          succeeded: 'Канал добавлен в список',
+          failed: 'Произошла непредвиденная ошибка',
+        },
+      },
+      channels: {
+        title: 'Каналы',
+      },
+      posts: {
+        title: 'Посты',
+      },
     },
   },
 };
 
-const names = {
-  [EN]: 'English',
-  [RU]: 'Русский',
+const getEl = (id) => document.getElementById(id);
+
+const insertTexts = () => {
+  getEl('page-title').innerText = i18next.t('pageTitle');
+  getEl('title').innerText = i18next.t('title');
+  getEl('lead').innerText = i18next.t('lead');
+  getEl('rss-form__url-input').setAttribute(
+    'placeholder',
+    i18next.t('rssForm.url.placeholder'),
+  );
+  getEl('rss-form__submit-button').innerText = i18next.t('rssForm.submit');
+  getEl('channels__title').innerText = i18next.t('channels.title');
+  getEl('posts__title').innerText = i18next.t('posts.title');
 };
 
-const init = (i18next) => i18next
+export { i18next };
+export default () => i18next
   .use(LanguageDetector)
-  .init({
-    debug: true,
-    fallbackLng,
-    resources,
-  }).then(() => {
-    const languageOptionsHTML = lngs.map((code) => {
-      return code === i18next.language
-        ? `<option value="${code}" selected>${names[code]}</option>`
-        : `<option value="${code}">${names[code]}</option>`;
-    });
-    languageSelectorEl.innerHTML = languageOptionsHTML.join('');
-
-    const updateTexts = () => {
-      // document.getElementById('output').innerHTML = i18next.t('key');
-    };
-
-    languageSelectorEl.onchange = (e) => i18next.changeLanguage(e.target.value);
-    i18next.on('languageChanged', updateTexts);
-
-    updateTexts();
-  });
-
-export { init };
-export default i18next;
+  .init({ debug: true, fallbackLng: 'ru', resources })
+  .then(insertTexts);

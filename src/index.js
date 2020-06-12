@@ -7,112 +7,108 @@ import * as yup from 'yup';
 import _ from 'lodash';
 import axios from 'axios';
 
-import i18n, { init as i18nInit } from './i18n';
-
-const rssFormEl = document.getElementById('rss-form');
-const rssFormInputEl = document.getElementById('rss-form-input');
-const rssFormSubmitButtonEl = document.getElementById('rss-form-submit-button');
-const channelsEl = document.getElementById('channels');
-const feedEl = document.getElementById('feed');
-
-// =====================================
-//  RENDERERS
-// =====================================
-
-const renderRSSForm = (state) => {
-  rssFormInputEl.value = state.data.url;
-
-  // todo: states - submitted (block field, loader instead of button)
-
-  if (state.state === 'initial' || !state.isValid) {
-    rssFormSubmitButtonEl.setAttribute('disabled', true);
-  } else {
-    rssFormSubmitButtonEl.removeAttribute('disabled');
-  }
-
-  if (state.state === 'filling' && !state.isValid) {
-    rssFormInputEl.classList.add('is-invalid');
-    // show errors
-  } else {
-    rssFormInputEl.classList.remove('is-invalid');
-  }
-};
-
-const renderChannels = (state) => {
-  const channelsHTML = state.channels.map(({ title, description, link }) => [
-    `<dt><a href="${link}">${title}</a></dt>`,
-    `<dd>${description}</dd>`,
-  ].join(''));
-  channelsEl.innerHTML = channelsHTML.join('<hr>');
-};
-
-const renderPosts = (state) => {
-  const postsHTML = state.posts.map(({ title, description, link }) => [
-    `<dt><a href="${link}">${title}</a></dt>`,
-    `<dd>${description}</dd>`,
-  ].join(''));
-  feedEl.innerHTML = postsHTML.join('<hr>');
-};
+import translate from './i18n';
+import {
+  doc, renderRSSForm, renderChannels, renderPosts,
+} from './renderers';
 
 // =====================================
 //  STATE
 // =====================================
 
-const rssFormState = onChange({
-  state: 'initial', // initial, filling, submitted ... ? succeeded, failed
-  isValid: false,
-  errors: [],
-  data: {
-    url: 'https://ru.hexlet.io/lessons.rss',
+const state = onChange({
+  rssForm: {
+    state: 'initial', // initial, filling, pending ... ? succeeded, failed
+    isValid: false,
+    errors: [],
+    data: {
+      url: 'https://ru.hexlet.io/lessons.rss',
+    },
   },
-}, () => renderRSSForm(rssFormState));
-
-const channelsState = onChange({
   channels: [],
-}, () => renderChannels(channelsState));
-
-const postsState = onChange({
   posts: [],
-}, () => renderPosts(postsState));
+}, (path) => {
+  if (path.startsWith('rssForm')) {
+    renderRSSForm(state.rssForm);
+    return;
+  }
 
-// todo: ui state with notification: state (success/fail), text
+  if (path === 'channels') {
+    renderChannels(state.channels);
+    return;
+  }
+
+  if (path === 'posts') {
+    renderPosts(state.posts);
+  }
+});
 
 // =====================================
 //  CONTROLLERS
 // =====================================
 
-// todo: custom yup validation of duplication (e.g. .rssLink())
-// todo: validate the whole 'data' object (schema.isValid(rssFormState.data))
-const schema = yup.string().required().url();
+const RSSFormSchema = yup.object().shape({
+  // todo: custom message for url
+  url: yup.string().required().url().test(
+    'is-unique-channel-url',
+    'rssForm.url.errors.notUnique',
+    (url) => !state.channels.some((channel) => channel.url === url),
+  ),
+});
+
 const validateRSSForm = () => {
-  rssFormState.isValid = schema.isValidSync(rssFormState.data.url)
-    && !channelsState.channels.some(({ url }) => url === rssFormState.data.url);
+  RSSFormSchema
+    .validate(state.rssForm.data)
+    .then(() => {
+      state.rssForm.isValid = true;
+      state.rssForm.errors = [];
+    })
+    .catch(({ errors }) => {
+      state.rssForm.isValid = false;
+      state.rssForm.errors = errors;
+    });
 };
 
-rssFormInputEl.oninput = (e) => {
-  rssFormState.data.url = e.target.value;
-  rssFormState.state = _.isEmpty(rssFormState.data.url) ? 'initial' : 'filling';
-  validateRSSForm();
+const resetRSSForm = () => {
+  doc.rssForm.urlInput.value = '';
+  state.rssForm.data.url = '';
+  state.rssForm.state = 'initial';
 };
 
-rssFormEl.onsubmit = (e) => {
+doc.rssForm.urlInput.oninput = (e) => {
+  state.rssForm.data.url = _.trim(e.target.value);
+  state.rssForm.state = state.rssForm.data.url;
+  if (state.rssForm.data.url) {
+    state.rssForm.state = 'filling';
+    validateRSSForm();
+  } else {
+    state.rssForm.state = 'initial';
+  }
+};
+
+doc.rssForm.form.onsubmit = (e) => {
   e.preventDefault();
   validateRSSForm();
 
-  if (!rssFormState.isValid) {
+  console.log('submit?');
+
+  if (!state.rssForm.isValid) {
+    console.log('no');
     return;
   }
 
-  rssFormState.state = 'submitted';
+  console.log('yas');
+
+  state.rssForm.state = 'pending';
 
   // todo: cors
-  axios.get(rssFormState.data.url).then((response) => {
+  axios.get(state.rssForm.data.url).then((response) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(response.data, 'application/xml');
 
     const channel = {
       id: _.uniqueId('channel'),
-      url: rssFormState.data.url,
+      url: state.rssForm.data.url,
       title: _.trim(doc.querySelector('channel > title').textContent),
       description: _.trim(doc.querySelector('channel > description').textContent),
       link: _.trim(doc.querySelector('channel > link').textContent),
@@ -126,18 +122,22 @@ rssFormEl.onsubmit = (e) => {
       link: _.trim(itemEl.querySelector('link').textContent),
     }));
 
-    // todo: notify(success, `Feed ${channel.name} has been successfully added`)
+    state.channels = [channel, ...state.channels];
+    state.posts = [...items, ...state.posts];
 
-    channelsState.channels = [channel, ...channelsState.channels];
-    postsState.posts = [...items, ...postsState.posts];
+    resetRSSForm();
+
+    state.rssForm.state = 'succeeded';
   }).catch(() => {
-    // todo: notify(fail, `Error occured when tried adding ${channel.name}`)
+    state.rssForm.state = 'failed';
   });
 };
 
+// todo~ proper watcher
+// watch when there are channels to watch
 const watchRSS = () => {
   setTimeout(() => {
-    const requests = channelsState.channels.map((channel) => {
+    const requests = state.channels.map((channel) => {
       return axios.get(channel.url).then((response) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(response.data, 'application/xml');
@@ -152,12 +152,12 @@ const watchRSS = () => {
 
         const newItems = _.differenceBy(
           items,
-          postsState.posts,
+          state.posts,
           (item) => item.channelId + item.id,
         );
 
         if (newItems.length) {
-          postsState.posts = [...newItems, ...postsState.posts];
+          state.posts = [...newItems, ...state.posts];
         }
       });
     });
@@ -168,8 +168,8 @@ const watchRSS = () => {
 
 // Mount
 validateRSSForm();
-renderRSSForm(rssFormState);
-renderChannels(channelsState);
-renderPosts(postsState);
-watchRSS(); // todo: watch when there are channels to watch
-i18nInit(i18n);
+renderRSSForm(state.rssForm);
+renderChannels(state.channels);
+renderPosts(state.posts);
+watchRSS();
+translate();
