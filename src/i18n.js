@@ -11,12 +11,14 @@ const resources = {
         url: {
           placeholder: 'rss link',
           errors: {
-            notUnique: 'Channel with that url is already in the list',
+            notUnique: 'The channel is already in the list',
+            required: 'A link is required',
+            invalid: 'Invalid url',
           },
         },
         submit: 'Add',
         feedback: {
-          succeeded: 'Channel has been added to the list',
+          succeeded: 'The channel has been added to the list',
           failed: 'Unexpected error occurred',
         },
       },
@@ -37,7 +39,9 @@ const resources = {
         url: {
           placeholder: 'ссылка на rss',
           errors: {
-            notUnique: 'Канал с такой ссылкой уже есть в списке',
+            notUnique: 'Канал уже есть в списке',
+            required: 'Ссылка обязательна',
+            invalid: 'Некорректная ссылка',
           },
         },
         submit: 'Добавить',
@@ -56,23 +60,8 @@ const resources = {
   },
 };
 
-const getEl = (id) => document.getElementById(id);
-
-const insertTexts = () => {
-  getEl('page-title').innerText = i18next.t('pageTitle');
-  getEl('title').innerText = i18next.t('title');
-  getEl('lead').innerText = i18next.t('lead');
-  getEl('rss-form__url-input').setAttribute(
-    'placeholder',
-    i18next.t('rssForm.url.placeholder'),
-  );
-  getEl('rss-form__submit-button').innerText = i18next.t('rssForm.submit');
-  getEl('channels__title').innerText = i18next.t('channels.title');
-  getEl('posts__title').innerText = i18next.t('posts.title');
-};
-
-export { i18next };
-export default () => i18next
+const init = (i18nextInstance) => i18nextInstance
   .use(LanguageDetector)
-  .init({ debug: true, fallbackLng: 'ru', resources })
-  .then(insertTexts);
+  .init({ debug: true, fallbackLng: 'ru', resources });
+
+export { init, i18next };
