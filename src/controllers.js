@@ -103,7 +103,7 @@ const watchChannel = (state, channelId, updateFrequency = 5000) => {
 };
 
 // =====================================
-//  SUBMISSION
+//  HANDLERS
 // =====================================
 
 const handleRSSFormUpdate = (state, formData) => {
