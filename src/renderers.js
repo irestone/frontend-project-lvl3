@@ -1,41 +1,26 @@
 import { init, i18next } from './i18n';
 
-const getEl = (id) => document.getElementById(id);
-
-const doc = {
-  rssForm: {
-    form: getEl('rss-form'),
-    urlInput: getEl('rss-form__url-input'),
-    submitButton: getEl('rss-form__submit-button'),
-  },
-  feedback: getEl('feedback'),
-  channels: getEl('channels__list'),
-  posts: getEl('posts__list'),
-};
-
-const insertTexts = () => {
+// ? should i inject init and i18next?
+const insertTexts = (doc) => {
   return init(i18next).then(() => {
-    getEl('page-title').innerText = i18next.t('pageTitle');
-    getEl('title').innerText = i18next.t('title');
-    getEl('lead').innerText = i18next.t('lead');
-    getEl('rss-form__url-input').setAttribute(
+    doc.pageTitle.innerText = i18next.t('pageTitle');
+    doc.title.innerText = i18next.t('title');
+    doc.lead.innerText = i18next.t('lead');
+    doc.rssForm.urlInput.setAttribute(
       'placeholder',
       i18next.t('rssForm.url.placeholder'),
     );
-    getEl('rss-form__submit-button').innerText = i18next.t('rssForm.submit');
-    getEl('channels__title').innerText = i18next.t('channels.title');
-    getEl('posts__title').innerText = i18next.t('posts.title');
+    doc.rssForm.submitButton.innerText = i18next.t('rssForm.submit');
+    doc.channels.title.innerText = i18next.t('channels.title');
+    doc.posts.title.innerText = i18next.t('posts.title');
   });
 };
 
-const renderRSSForm = ({
+const renderRSSForm = (doc, {
   state, isValid, errors, data,
 }) => {
   doc.rssForm.urlInput.value = data.url;
   doc.rssForm.urlInput.focus();
-
-  // ? how do i handle rendering?
-  // ? should i redraw the whole form?
 
   if (state === 'initial' || !isValid) {
     doc.rssForm.submitButton.setAttribute('disabled', true);
@@ -73,22 +58,26 @@ const renderRSSForm = ({
   }
 };
 
-const renderChannels = (channelsState) => {
+const renderChannels = (doc, channelsState) => {
   const channelsHTML = channelsState.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,
   ].join(''));
-  doc.channels.innerHTML = channelsHTML.join('<hr>');
+  doc.channels.list.innerHTML = channelsHTML.length
+    ? channelsHTML.join('<hr>')
+    : `<p class="text-muted">${i18next.t('channels.noChannels')}</p>`;
 };
 
-const renderPosts = (postsState) => {
+const renderPosts = (doc, postsState) => {
   const postsHTML = postsState.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,
   ].join(''));
-  doc.posts.innerHTML = postsHTML.join('<hr>');
+  doc.posts.list.innerHTML = postsHTML.length
+    ? postsHTML.join('<hr>')
+    : `<p class="text-muted">${i18next.t('posts.noPosts')}</p>`;
 };
 
 export {
-  doc, insertTexts, renderRSSForm, renderChannels, renderPosts,
+  insertTexts, renderRSSForm, renderChannels, renderPosts,
 };

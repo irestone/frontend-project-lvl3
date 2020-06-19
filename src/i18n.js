@@ -24,9 +24,11 @@ const resources = {
       },
       channels: {
         title: 'Channels',
+        noChannels: 'No channels were added yet',
       },
       posts: {
         title: 'Posts',
+        noPosts: 'No posts',
       },
     },
   },
@@ -52,9 +54,11 @@ const resources = {
       },
       channels: {
         title: 'Каналы',
+        noChannels: 'Вы еще не добавили ни одного канала',
       },
       posts: {
         title: 'Посты',
+        noPosts: 'Нет постов',
       },
     },
   },
