@@ -4,6 +4,7 @@ import _ from 'lodash';
 
 import { parseRSSXML } from './parser';
 
+// ? better name?
 const cors = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
 
 const fetchFeed = (url) => axios
@@ -55,6 +56,7 @@ const resetRSSForm = (state) => {
 // =====================================
 
 const addFeed = (state, feed, url) => {
+  // ? is it ok how i handle this id assigning?
   const channelId = url;
   const channel = { ...feed.channel, id: channelId, url };
   const posts = feed.posts.map((post) => ({ ...post, channelId }));
