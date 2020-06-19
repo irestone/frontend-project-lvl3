@@ -16,14 +16,15 @@ const fetchFeed = (url) => axios
 
 const validateRSSForm = (state) => {
   // ? how to optimize this? (scheme creation)
+  // ? can i pass the state (as a context) to .validate()?
   const rssFormSchema = yup.object().shape({
     url: yup
       .string()
-      .required('rssForm.url.errors.required')
-      .url('rssForm.url.errors.invalid')
+      .required('rssForm.url.validationErrors.required')
+      .url('rssForm.url.validationErrors.invalidUrl')
       .test(
         'is-unique-channel',
-        'rssForm.url.errors.notUnique',
+        'rssForm.url.validationErrors.notUnique',
         (url) => !state.channels.some((channel) => channel.url === url),
       ),
   });
@@ -105,18 +106,31 @@ const watchChannel = (state, channelId, updateFrequency = 5000) => {
 //  SUBMISSION
 // =====================================
 
+const handleRSSFormUpdate = (state, formData) => {
+  state.rssForm.state = 'filling';
+  updateRSSForm(state, formData);
+  validateRSSForm(state); // ? what should i do with errors?
+};
+
 const handleChannelSubmission = (state) => {
   state.rssForm.state = 'processing';
-
-  validateRSSForm()
+  validateRSSForm(state)
     .then(() => fetchFeed(state.rssForm.data.url))
     .then((feed) => addFeed(state, feed, state.rssForm.data.url))
     .then((channelId) => watchChannel(state, channelId))
     .then(() => resetRSSForm(state))
-    .finally(() => { state.rssForm.state = 'processed'; });
+    .catch(() => {
+      if (!state.rssForm.errors.length) {
+        state.rssForm.errors = ['errors.unexpected'];
+      }
+    })
+    .finally(() => {
+      state.rssForm.state = 'processed';
+      console.log(state.rssForm);
+    });
 };
 
 export {
-  updateRSSForm,
+  handleRSSFormUpdate,
   handleChannelSubmission,
 };

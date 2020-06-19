@@ -9,7 +9,7 @@ import { init as initState } from './state';
 import {
   insertTexts, renderRSSForm, renderChannels, renderPosts,
 } from './renderers';
-import { handleChannelSubmission, updateRSSForm } from './controllers';
+import { handleRSSFormUpdate, handleChannelSubmission } from './controllers';
 
 // Collecting DOM elements
 
@@ -53,7 +53,7 @@ const state = initState((path) => {
 
 // Assigning controllers
 
-doc.rssForm.urlInput.oninput = (e) => updateRSSForm(state, {
+doc.rssForm.urlInput.oninput = (e) => handleRSSFormUpdate(state, {
   url: _.trim(e.target.value),
 });
 

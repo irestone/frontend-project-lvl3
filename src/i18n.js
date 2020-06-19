@@ -10,10 +10,10 @@ const resources = {
       rssForm: {
         url: {
           placeholder: 'rss link',
-          errors: {
+          validationErrors: {
             notUnique: 'The channel is already in the list',
             required: 'A link is required',
-            invalid: 'Invalid url',
+            invalidUrl: 'Invalid url',
           },
         },
         submit: 'Add',
@@ -30,6 +30,9 @@ const resources = {
         title: 'Posts',
         noPosts: 'No posts',
       },
+      errors: {
+        unexpected: 'Unexpected error occurred',
+      },
     },
   },
   ru: {
@@ -40,10 +43,10 @@ const resources = {
       rssForm: {
         url: {
           placeholder: 'ссылка на rss',
-          errors: {
+          validationErrors: {
             notUnique: 'Канал уже есть в списке',
             required: 'Ссылка обязательна',
-            invalid: 'Некорректная ссылка',
+            invalidUrl: 'Некорректная ссылка',
           },
         },
         submit: 'Добавить',
@@ -59,6 +62,9 @@ const resources = {
       posts: {
         title: 'Посты',
         noPosts: 'Нет постов',
+      },
+      errors: {
+        unexpected: 'Произошла непредвиденная ошибка',
       },
     },
   },
