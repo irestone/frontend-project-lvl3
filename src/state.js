@@ -5,7 +5,7 @@ const init = (watcher) => onChange({
     // ? should i use an fsm?
     // ? should i use a map or smth to get rid of strings?
     state: 'filling', // filling | processing | processed
-    isValid: true,
+    isValid: true, // ? do i need this? (i could just use errors.length)
     errors: [],
     data: {
       url: '',

@@ -22,39 +22,44 @@ const renderRSSForm = (doc, {
   doc.rssForm.urlInput.value = data.url;
   doc.rssForm.urlInput.focus();
 
-  if (state === 'initial' || !isValid) {
-    doc.rssForm.submitButton.setAttribute('disabled', true);
-  } else {
-    doc.rssForm.submitButton.removeAttribute('disabled');
+  // reset
+
+  doc.rssForm.submitButton.removeAttribute('disabled');
+  doc.rssForm.urlInput.removeAttribute('disabled');
+  doc.rssForm.urlInput.classList.remove('is-invalid');
+  doc.feedback.innerHTML = '';
+
+  // set
+  // ? switch..case
+
+  if (state === 'filling') {
+    if (!data.url || !isValid) {
+      doc.rssForm.submitButton.setAttribute('disabled', true);
+    }
+
+    // todo: color feedback depending on the state
+    // https://getbootstrap.com/docs/4.0/components/forms/#validation
+    if (data.url && !isValid) {
+      doc.rssForm.urlInput.classList.add('is-invalid');
+      doc.feedback.innerHTML = errors.map((error) => {
+        return `<small class="text-danger">${i18next.t(error)}</small>`;
+      }).join('<br>');
+    }
+    return;
   }
 
-  if (state === 'pending') {
+  if (state === 'processing') {
     doc.rssForm.urlInput.setAttribute('disabled', true);
     doc.rssForm.submitButton.setAttribute('disabled', true);
-  } else {
-    // ! this is wrong. the whole approach. it overwrites previous rules
-    doc.rssForm.urlInput.removeAttribute('disabled');
-    doc.rssForm.submitButton.removeAttribute('disabled');
+    return;
   }
 
-  // todo: color feedback depending on the state
-  // https://getbootstrap.com/docs/4.0/components/forms/#validation
-  if (state === 'filling' && !isValid) {
-    doc.rssForm.urlInput.classList.add('is-invalid');
-    doc.feedback.innerHTML = errors.map((error) => i18next.t(error)).join('<br>');
-    // doc.feedback.classList.add('invalid-feedback');
-  } else {
-    doc.rssForm.urlInput.classList.remove('is-invalid');
-    doc.feedback.innerHTML = '';
-    // doc.feedback.classList.remove('invalid-feedback');
-  }
-
-  if (state === 'succeeded') {
-    doc.feedback.innerHTML = i18next.t('rssForm.feedback.succeeded');
-  }
-
-  if (state === 'failed') {
-    doc.feedback.innerHTML = i18next.t('rssForm.feedback.failed');
+  if (state === 'processed') {
+    if (errors.length) {
+      doc.feedback.innerHTML = `<p class="text-danger mt-3">${i18next.t('rssForm.feedback.failed')}</>`;
+    } else {
+      doc.feedback.innerHTML = `<p class="text-success mt-3">${i18next.t('rssForm.feedback.succeeded')}</>`;
+    }
   }
 };
 

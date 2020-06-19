@@ -18,7 +18,7 @@ const resources = {
         },
         submit: 'Add',
         feedback: {
-          succeeded: 'The channel has been added to the list',
+          succeeded: 'The channel has been added',
           failed: 'Unexpected error occurred',
         },
       },
@@ -51,7 +51,7 @@ const resources = {
         },
         submit: 'Добавить',
         feedback: {
-          succeeded: 'Канал добавлен в список',
+          succeeded: 'Канал добавлен',
           failed: 'Произошла непредвиденная ошибка',
         },
       },
