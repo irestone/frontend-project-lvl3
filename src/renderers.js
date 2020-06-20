@@ -30,7 +30,7 @@ const renderRSSForm = (doc, {
   doc.feedback.innerHTML = '';
 
   // set
-  // ? switch..case
+  // ? dispatcher
 
   if (state === 'filling') {
     if (!data.url || !isValid) {
