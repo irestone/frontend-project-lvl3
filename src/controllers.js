@@ -4,12 +4,7 @@ import _ from 'lodash';
 
 import { parseRSSXML } from './parser';
 
-// ? better name?
-const cors = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
-
-const fetchFeed = (url) => axios
-  .get(cors(url))
-  .then((response) => parseRSSXML(response.data));
+const makeCORSedUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
 
 // =====================================
 //  RSS FORM
@@ -18,20 +13,18 @@ const fetchFeed = (url) => axios
 const validateRSSForm = (state) => {
   // ? how to optimize this? (scheme creation)
   // ? can i pass the state (as a context) to .validate()?
-  const rssFormSchema = yup.object().shape({
-    url: yup
-      .string()
-      .required('rssForm.url.validationErrors.required')
-      .url('rssForm.url.validationErrors.invalidUrl')
-      .test(
-        'is-unique-channel',
-        'rssForm.url.validationErrors.notUnique',
-        (url) => !state.channels.some((channel) => channel.url === url),
-      ),
-  });
+  const rssFormURLSchema = yup
+    .string()
+    .required('rssForm.url.validationErrors.required')
+    .url('rssForm.url.validationErrors.invalidUrl')
+    .test(
+      'is-unique-channel',
+      'rssForm.url.validationErrors.notUnique',
+      (url) => !state.channels.some((channel) => channel.url === url),
+    );
 
-  return rssFormSchema
-    .validate(state.rssForm.data)
+  return rssFormURLSchema
+    .validate(state.rssForm.url)
     .then(() => {
       state.rssForm.isValid = true;
       state.rssForm.errors = [];
@@ -43,12 +36,8 @@ const validateRSSForm = (state) => {
     });
 };
 
-const updateRSSForm = (state, formData) => {
-  state.rssForm.data = { ...state.rssForm.data, ...formData };
-};
-
 const resetRSSForm = (state) => {
-  state.rssForm.data = { url: '' };
+  state.rssForm.url = '';
 };
 
 // =====================================
@@ -56,18 +45,18 @@ const resetRSSForm = (state) => {
 // =====================================
 
 const addFeed = (state, feed, url) => {
-  // ? is it ok how i handle this id assigning?
-  const channelId = url;
+  const channelId = _.uniqueId('channel-');
   const channel = { ...feed.channel, id: channelId, url };
   const posts = feed.posts.map((post) => ({ ...post, channelId }));
   state.channels = [channel, ...state.channels];
   state.posts = [...posts, ...state.posts];
-  return channelId;
 };
 
 const updateChannelPosts = (state, channel) => {
-  return fetchFeed(channel.url)
-    .then((feed) => {
+  return axios.get(makeCORSedUrl(channel.url))
+    .then(({ data }) => {
+      const feed = parseRSSXML(data);
+
       const newPosts = _.differenceBy(
         feed.posts,
         state.posts,
@@ -87,17 +76,12 @@ const updateChannelPosts = (state, channel) => {
     });
 };
 
-// ? should i just periodically update the whole feed?
-const watchChannel = (state, channelId, updateFrequency = 5000) => {
-  const channel = state.channels.find((channel) => channel.id === channelId);
-
-  if (!channel) {
-    return;
-  }
-
+const watchChannels = (state, updateFrequency = 5000) => {
   const planUpdate = () => {
     setTimeout(() => {
-      updateChannelPosts(state, channel).finally(planUpdate);
+      const updateRequests = state.channels
+        .map((channel) => updateChannelPosts(state, channel));
+      Promise.all(updateRequests).finally(planUpdate);
     }, updateFrequency);
   };
 
@@ -108,19 +92,21 @@ const watchChannel = (state, channelId, updateFrequency = 5000) => {
 //  HANDLERS
 // =====================================
 
-const handleRSSFormUpdate = (state, formData) => {
+const handleRSSFormUpdate = (state, url) => {
   state.rssForm.state = 'filling';
-  updateRSSForm(state, formData);
-  validateRSSForm(state); // ? what should i do with errors?
+  state.rssForm.url = url;
+  validateRSSForm(state);
 };
 
 const handleChannelSubmission = (state) => {
   state.rssForm.state = 'processing';
   validateRSSForm(state)
-    .then(() => fetchFeed(state.rssForm.data.url))
-    .then((feed) => addFeed(state, feed, state.rssForm.data.url))
-    .then((channelId) => watchChannel(state, channelId))
-    .then(() => resetRSSForm(state))
+    .then(() => axios.get(makeCORSedUrl(state.rssForm.url)))
+    .then(({ data }) => {
+      const feed = parseRSSXML(data);
+      addFeed(state, feed, state.rssForm.url);
+      resetRSSForm(state);
+    })
     .catch(() => {
       if (!state.rssForm.errors.length) {
         state.rssForm.errors = ['errors.unexpected'];
@@ -128,11 +114,11 @@ const handleChannelSubmission = (state) => {
     })
     .finally(() => {
       state.rssForm.state = 'processed';
-      console.log(state.rssForm);
     });
 };
 
 export {
   handleRSSFormUpdate,
   handleChannelSubmission,
+  watchChannels,
 };

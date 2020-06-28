@@ -1,8 +1,5 @@
-import { init, i18next } from './i18n';
-
-// ? should i inject init and i18next?
-const insertTexts = (doc) => {
-  return init(i18next).then(() => {
+const insertTexts = (doc, initi18next, i18next) => {
+  return initi18next().then(() => {
     doc.pageTitle.innerText = i18next.t('pageTitle');
     doc.title.innerText = i18next.t('title');
     doc.lead.innerText = i18next.t('lead');
@@ -17,9 +14,9 @@ const insertTexts = (doc) => {
 };
 
 const renderRSSForm = (doc, {
-  state, isValid, errors, data,
-}) => {
-  doc.rssForm.urlInput.value = data.url;
+  state, isValid, errors, url,
+}, i18next) => {
+  doc.rssForm.urlInput.value = url;
   doc.rssForm.urlInput.focus();
 
   // reset
@@ -33,13 +30,13 @@ const renderRSSForm = (doc, {
   // ? dispatcher
 
   if (state === 'filling') {
-    if (!data.url || !isValid) {
+    if (!url || !isValid) {
       doc.rssForm.submitButton.setAttribute('disabled', true);
     }
 
     // todo: color feedback depending on the state
     // https://getbootstrap.com/docs/4.0/components/forms/#validation
-    if (data.url && !isValid) {
+    if (url && !isValid) {
       doc.rssForm.urlInput.classList.add('is-invalid');
       doc.feedback.innerHTML = errors.map((error) => {
         return `<small class="text-danger">${i18next.t(error)}</small>`;
@@ -63,7 +60,7 @@ const renderRSSForm = (doc, {
   }
 };
 
-const renderChannels = (doc, channelsState) => {
+const renderChannels = (doc, channelsState, i18next) => {
   const channelsHTML = channelsState.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,
@@ -73,7 +70,7 @@ const renderChannels = (doc, channelsState) => {
     : `<p class="text-muted">${i18next.t('channels.noChannels')}</p>`;
 };
 
-const renderPosts = (doc, postsState) => {
+const renderPosts = (doc, postsState, i18next) => {
   const postsHTML = postsState.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,

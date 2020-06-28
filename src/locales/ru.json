@@ -1,0 +1,31 @@
+{
+  "pageTitle": "RSS Reader",
+  "title": "RSS Reader",
+  "lead": "Начните читать RSS сегодня! Это легко, это приятно.",
+  "rssForm": {
+    "url": {
+      "placeholder": "ссылка на rss",
+      "validationErrors": {
+        "notUnique": "Канал уже есть в списке",
+        "required": "Ссылка обязательна",
+        "invalidUrl": "Некорректная ссылка"
+      }
+    },
+    "submit": "Добавить",
+    "feedback": {
+      "succeeded": "Канал добавлен",
+      "failed": "Произошла непредвиденная ошибка"
+    }
+  },
+  "channels": {
+    "title": "Каналы",
+    "noChannels": "Вы еще не добавили ни одного канала"
+  },
+  "posts": {
+    "title": "Посты",
+    "noPosts": "Нет постов"
+  },
+  "errors": {
+    "unexpected": "Произошла непредвиденная ошибка"
+  }
+}
