@@ -9,7 +9,7 @@ import i18next from 'i18next';
 
 import I18nextBrowserLanguageDetector from 'i18next-browser-languagedetector';
 import {
-  insertTexts, renderRSSForm, renderChannels, renderPosts,
+  insertTexts, renderChannels, renderPosts, renderRSSFormFilling, renderRSSFormSubmission,
 } from './renderers';
 import { handleRSSFormUpdate, handleChannelSubmission, watchChannels } from './controllers';
 
@@ -43,28 +43,36 @@ const doc = {
 const state = onChange(
   {
     rssForm: {
-    // ? should i use a map or smth to get rid of strings?
-      state: 'filling', // filling | processing | processed
-      isValid: true,
-      errors: [],
-      url: '',
+      fillingState: {
+        state: 'empty', // empty | valid/invalid
+        errors: [],
+        url: '',
+      },
+      submissionState: {
+        state: 'idle', // idle | sending | failed/succeeded
+        errors: [],
+      },
     },
     channels: [],
     posts: [],
   },
-  (path) => {
-    if (path.startsWith('rssForm')) {
-      renderRSSForm(doc, state.rssForm, i18next);
+  (path, value) => {
+    if (path === 'rssForm.fillingState') {
+      renderRSSFormFilling(doc, value, i18next);
+      return;
+    }
+    if (path === 'rssForm.submissionState') {
+      renderRSSFormSubmission(doc, value, i18next);
       return;
     }
 
     if (path === 'channels') {
-      renderChannels(doc, state.channels, i18next);
+      renderChannels(doc, value, i18next);
       return;
     }
 
     if (path === 'posts') {
-      renderPosts(doc, state.posts, i18next);
+      renderPosts(doc, value, i18next);
     }
   },
 );
@@ -97,7 +105,7 @@ insertTexts(
   i18next,
 );
 
-renderRSSForm(doc, state.rssForm, i18next);
+renderRSSFormFilling(doc, state.rssForm.fillingState, i18next);
 renderChannels(doc, state.channels, i18next);
 renderPosts(doc, state.posts, i18next);
 

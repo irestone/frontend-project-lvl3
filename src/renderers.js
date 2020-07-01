@@ -13,50 +13,47 @@ const insertTexts = (doc, initi18next, i18next) => {
   });
 };
 
-const renderRSSForm = (doc, {
-  state, isValid, errors, url,
-}, i18next) => {
+// ? Resets are duiplicating. Do i have to do smth w/ that?
+
+const renderRSSFormFilling = (doc, { state, errors, url }, i18next) => {
   doc.rssForm.urlInput.value = url;
-  doc.rssForm.urlInput.focus();
 
   // reset
-
   doc.rssForm.submitButton.removeAttribute('disabled');
   doc.rssForm.urlInput.removeAttribute('disabled');
   doc.rssForm.urlInput.classList.remove('is-invalid');
   doc.feedback.innerHTML = '';
 
-  // set
-  // ? dispatcher
 
-  if (state === 'filling') {
-    if (!url || !isValid) {
-      doc.rssForm.submitButton.setAttribute('disabled', true);
-    }
-
-    // todo: color feedback depending on the state
-    // https://getbootstrap.com/docs/4.0/components/forms/#validation
-    if (url && !isValid) {
-      doc.rssForm.urlInput.classList.add('is-invalid');
-      doc.feedback.innerHTML = errors.map((error) => {
-        return `<small class="text-danger">${i18next.t(error)}</small>`;
-      }).join('<br>');
-    }
-    return;
+  if (state === 'invalid' || state === 'empty') {
+    doc.rssForm.submitButton.setAttribute('disabled', true);
   }
 
-  if (state === 'processing') {
+  if (state === 'invalid') {
+    doc.rssForm.urlInput.classList.add('is-invalid');
+    doc.feedback.innerHTML = errors.map((error) => {
+      return `<small class="text-danger">${i18next.t(error)}</small>`;
+    }).join('<br>');
+  }
+};
+
+const renderRSSFormSubmission = (doc, { state, errors }, i18next) => {
+  // reset
+  doc.rssForm.submitButton.removeAttribute('disabled');
+  doc.rssForm.urlInput.removeAttribute('disabled');
+  doc.rssForm.urlInput.classList.remove('is-invalid');
+  doc.feedback.innerHTML = '';
+
+  // ? dispatcher (map)
+  if (state === 'sending') {
     doc.rssForm.urlInput.setAttribute('disabled', true);
     doc.rssForm.submitButton.setAttribute('disabled', true);
-    return;
-  }
-
-  if (state === 'processed') {
-    if (errors.length) {
-      doc.feedback.innerHTML = `<p class="text-danger mt-3">${i18next.t('rssForm.feedback.failed')}</>`;
-    } else {
-      doc.feedback.innerHTML = `<p class="text-success mt-3">${i18next.t('rssForm.feedback.succeeded')}</>`;
-    }
+  } else if (state === 'succeeded') {
+    doc.feedback.innerHTML = `<p class="text-success mt-3">${i18next.t('rssForm.success')}</>`;
+  } else if (state === 'failed') {
+    doc.feedback.innerHTML = errors.map((error) => {
+      return `<small class="text-danger">${i18next.t(error)}</small>`;
+    }).join('<br>');
   }
 };
 
@@ -81,5 +78,5 @@ const renderPosts = (doc, postsState, i18next) => {
 };
 
 export {
-  insertTexts, renderRSSForm, renderChannels, renderPosts,
+  insertTexts, renderRSSFormFilling, renderRSSFormSubmission, renderChannels, renderPosts,
 };

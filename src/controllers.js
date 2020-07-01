@@ -10,7 +10,7 @@ const makeCORSedUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
 //  RSS FORM
 // =====================================
 
-const validateRSSForm = (state) => {
+const validateRSSForm = (url, channels) => {
   // ? how to optimize this? (scheme creation)
   // ? can i pass the state (as a context) to .validate()?
   const rssFormURLSchema = yup
@@ -20,24 +20,14 @@ const validateRSSForm = (state) => {
     .test(
       'is-unique-channel',
       'rssForm.url.validationErrors.notUnique',
-      (url) => !state.channels.some((channel) => channel.url === url),
+      (url) => !channels.some((channel) => channel.url === url),
     );
 
-  return rssFormURLSchema
-    .validate(state.rssForm.url)
-    .then(() => {
-      state.rssForm.isValid = true;
-      state.rssForm.errors = [];
-    })
-    .catch((error) => {
-      state.rssForm.isValid = false;
-      state.rssForm.errors = error.errors;
-      throw error;
-    });
+  return rssFormURLSchema.validate(url);
 };
 
 const resetRSSForm = (state) => {
-  state.rssForm.url = '';
+  state.rssForm.fillingState = { state: 'empty', errors: [], url: '' };
 };
 
 // =====================================
@@ -93,27 +83,39 @@ const watchChannels = (state, updateFrequency = 5000) => {
 // =====================================
 
 const handleRSSFormUpdate = (state, url) => {
-  state.rssForm.state = 'filling';
-  state.rssForm.url = url;
-  validateRSSForm(state);
+  if (!url) {
+    state.rssForm.fillingState = { state: 'empty', errors: [], url };
+    return;
+  }
+
+  validateRSSForm(url, state.channels)
+    .then(() => {
+      state.rssForm.fillingState = { state: 'valid', errors: [], url };
+    })
+    .catch(({ errors }) => {
+      state.rssForm.fillingState = { state: 'invalid', errors, url };
+    });
 };
 
 const handleChannelSubmission = (state) => {
-  state.rssForm.state = 'processing';
-  validateRSSForm(state)
-    .then(() => axios.get(makeCORSedUrl(state.rssForm.url)))
+  if (state.rssForm.fillingState.state !== 'valid') {
+    return;
+  }
+
+  state.rssForm.submissionState = { state: 'sending', errors: [] };
+
+  axios.get(makeCORSedUrl(state.rssForm.fillingState.url))
     .then(({ data }) => {
       const feed = parseRSSXML(data);
-      addFeed(state, feed, state.rssForm.url);
+      addFeed(state, feed, state.rssForm.fillingState.url);
       resetRSSForm(state);
+      state.rssForm.submissionState = { state: 'succeeded', errors: [] };
     })
     .catch(() => {
-      if (!state.rssForm.errors.length) {
-        state.rssForm.errors = ['errors.unexpected'];
-      }
-    })
-    .finally(() => {
-      state.rssForm.state = 'processed';
+      state.rssForm.submissionState = {
+        state: 'failed',
+        errors: ['errors.unexpected'],
+      };
     });
 };
 

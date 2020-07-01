@@ -12,10 +12,7 @@
       }
     },
     "submit": "Add",
-    "feedback": {
-      "succeeded": "The channel has been added",
-      "failed": "Unexpected error occurred"
-    }
+    "success": "The channel has been added"
   },
   "channels": {
     "title": "Channels",
