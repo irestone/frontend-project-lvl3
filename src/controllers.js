@@ -26,10 +26,6 @@ const validateRSSForm = (url, channels) => {
   return rssFormURLSchema.validate(url);
 };
 
-const resetRSSForm = (state) => {
-  state.rssForm.fillingState = { state: 'empty', errors: [], url: '' };
-};
-
 // =====================================
 //  FEED
 // =====================================
@@ -66,16 +62,14 @@ const updateChannelPosts = (state, channel) => {
     });
 };
 
-const watchChannels = (state, updateFrequency = 5000) => {
-  const planUpdate = () => {
-    setTimeout(() => {
-      const updateRequests = state.channels
-        .map((channel) => updateChannelPosts(state, channel));
-      Promise.all(updateRequests).finally(planUpdate);
-    }, updateFrequency);
-  };
-
-  planUpdate();
+const watchChannels = (state) => {
+  const updateFrequency = 5000;
+  setTimeout(() => {
+    const updateRequests = state.channels
+      .map((channel) => updateChannelPosts(state, channel));
+    Promise.all(updateRequests)
+      .finally(() => watchChannels(state, updateFrequency));
+  }, updateFrequency);
 };
 
 // =====================================
@@ -83,17 +77,19 @@ const watchChannels = (state, updateFrequency = 5000) => {
 // =====================================
 
 const handleRSSFormUpdate = (state, url) => {
+  state.rssForm.url = url;
+
   if (!url) {
-    state.rssForm.fillingState = { state: 'empty', errors: [], url };
+    state.rssForm.fillingState = { state: 'empty', errors: [] };
     return;
   }
 
   validateRSSForm(url, state.channels)
     .then(() => {
-      state.rssForm.fillingState = { state: 'valid', errors: [], url };
+      state.rssForm.fillingState = { state: 'valid', errors: [] };
     })
     .catch(({ errors }) => {
-      state.rssForm.fillingState = { state: 'invalid', errors, url };
+      state.rssForm.fillingState = { state: 'invalid', errors };
     });
 };
 
@@ -104,11 +100,12 @@ const handleChannelSubmission = (state) => {
 
   state.rssForm.submissionState = { state: 'sending', errors: [] };
 
-  axios.get(makeCORSedUrl(state.rssForm.fillingState.url))
+  axios.get(makeCORSedUrl(state.rssForm.url))
     .then(({ data }) => {
       const feed = parseRSSXML(data);
-      addFeed(state, feed, state.rssForm.fillingState.url);
-      resetRSSForm(state);
+      addFeed(state, feed, state.rssForm.url);
+      state.rssForm.url = '';
+      state.rssForm.fillingState = { state: 'empty', errors: [] };
       state.rssForm.submissionState = { state: 'succeeded', errors: [] };
     })
     .catch(() => {

@@ -1,28 +1,30 @@
 {
-  "pageTitle": "RSS  Reader",
-  "title": "RSS Reader",
-  "lead": "Start reading RSS today! It is easy, it is nicely.",
-  "rssForm": {
-    "url": {
-      "placeholder": "rss link",
-      "validationErrors": {
-        "notUnique": "The channel is already in the list",
-        "required": "A link is required",
-        "invalidUrl": "Invalid url"
-      }
+  "translation": {
+    "pageTitle": "RSS  Reader",
+    "title": "RSS Reader",
+    "lead": "Start reading RSS today! It is easy, it is nicely.",
+    "rssForm": {
+      "url": {
+        "placeholder": "rss link",
+        "validationErrors": {
+          "notUnique": "The channel is already in the list",
+          "required": "A link is required",
+          "invalidUrl": "Invalid url"
+        }
+      },
+      "submit": "Add",
+      "success": "The channel has been added"
     },
-    "submit": "Add",
-    "success": "The channel has been added"
-  },
-  "channels": {
-    "title": "Channels",
-    "noChannels": "No channels were added yet"
-  },
-  "posts": {
-    "title": "Posts",
-    "noPosts": "No posts"
-  },
-  "errors": {
-    "unexpected": "Unexpected error occurred"
+    "channels": {
+      "title": "Channels",
+      "noChannels": "No channels were added yet"
+    },
+    "posts": {
+      "title": "Posts",
+      "noPosts": "No posts"
+    },
+    "errors": {
+      "unexpected": "Unexpected error occurred"
+    }
   }
 }

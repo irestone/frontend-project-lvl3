@@ -1,79 +1,100 @@
-const insertTexts = (doc, initi18next, i18next) => {
-  return initi18next().then(() => {
-    doc.pageTitle.innerText = i18next.t('pageTitle');
-    doc.title.innerText = i18next.t('title');
-    doc.lead.innerText = i18next.t('lead');
-    doc.rssForm.urlInput.setAttribute(
-      'placeholder',
-      i18next.t('rssForm.url.placeholder'),
-    );
-    doc.rssForm.submitButton.innerText = i18next.t('rssForm.submit');
-    doc.channels.title.innerText = i18next.t('channels.title');
-    doc.posts.title.innerText = i18next.t('posts.title');
-  });
+import i18next from 'i18next';
+
+// =====================================
+//  TEXTS
+// =====================================
+
+const insertTexts = (doc) => {
+  doc.pageTitle.innerText = i18next.t('pageTitle');
+  doc.title.innerText = i18next.t('title');
+  doc.lead.innerText = i18next.t('lead');
+  doc.rssForm.urlInput.setAttribute(
+    'placeholder',
+    i18next.t('rssForm.url.placeholder'),
+  );
+  doc.rssForm.submitButton.innerText = i18next.t('rssForm.submit');
+  doc.channels.title.innerText = i18next.t('channels.title');
+  doc.posts.title.innerText = i18next.t('posts.title');
 };
 
-// ? Resets are duiplicating. Do i have to do smth w/ that?
+// =====================================
+//  RSS FORM
+// =====================================
 
-const renderRSSFormFilling = (doc, { state, errors, url }, i18next) => {
-  doc.rssForm.urlInput.value = url;
-
-  // reset
+const resetRSSForm = (doc) => {
   doc.rssForm.submitButton.removeAttribute('disabled');
   doc.rssForm.urlInput.removeAttribute('disabled');
   doc.rssForm.urlInput.classList.remove('is-invalid');
   doc.feedback.innerHTML = '';
+};
 
-
-  if (state === 'invalid' || state === 'empty') {
+const renderRSSFormFillingMapping = {
+  empty: (doc) => {
+    doc.rssForm.urlInput.value = '';
     doc.rssForm.submitButton.setAttribute('disabled', true);
-  }
-
-  if (state === 'invalid') {
+  },
+  invalid: (doc, { errors }) => {
     doc.rssForm.urlInput.classList.add('is-invalid');
+    doc.rssForm.submitButton.setAttribute('disabled', true);
     doc.feedback.innerHTML = errors.map((error) => {
       return `<small class="text-danger">${i18next.t(error)}</small>`;
     }).join('<br>');
-  }
+  },
+  valid: () => {},
 };
 
-const renderRSSFormSubmission = (doc, { state, errors }, i18next) => {
-  // reset
-  doc.rssForm.submitButton.removeAttribute('disabled');
-  doc.rssForm.urlInput.removeAttribute('disabled');
-  doc.rssForm.urlInput.classList.remove('is-invalid');
-  doc.feedback.innerHTML = '';
+const renderRSSFormFilling = (doc, fillingState) => {
+  resetRSSForm(doc);
+  const render = renderRSSFormFillingMapping[fillingState.state];
+  render(doc, fillingState);
+};
 
-  // ? dispatcher (map)
-  if (state === 'sending') {
+const renderRSSFormSubmissionMapping = {
+  idle: () => {},
+  sending: (doc) => {
     doc.rssForm.urlInput.setAttribute('disabled', true);
     doc.rssForm.submitButton.setAttribute('disabled', true);
-  } else if (state === 'succeeded') {
+  },
+  succeeded: (doc) => {
     doc.feedback.innerHTML = `<p class="text-success mt-3">${i18next.t('rssForm.success')}</>`;
-  } else if (state === 'failed') {
+  },
+  failed: (doc, { errors }) => {
     doc.feedback.innerHTML = errors.map((error) => {
       return `<small class="text-danger">${i18next.t(error)}</small>`;
     }).join('<br>');
-  }
+  },
 };
 
-const renderChannels = (doc, channelsState, i18next) => {
-  const channelsHTML = channelsState.map(({ title, description, link }) => [
+const renderRSSFormSubmission = (doc, submissionState) => {
+  resetRSSForm(doc);
+  const render = renderRSSFormSubmissionMapping[submissionState.state];
+  render(doc, submissionState);
+};
+
+// =====================================
+//  FEED
+// =====================================
+
+const genHTMLLinkList = (list) => {
+  if (!list.length) {
+    return '';
+  }
+  const rows = list.map(({ title, description, link }) => [
     `<dt><a href="${link}">${title}</a></dt>`,
     `<dd>${description}</dd>`,
   ].join(''));
-  doc.channels.list.innerHTML = channelsHTML.length
-    ? channelsHTML.join('<hr>')
+  return `<dl>${rows.join('<hr>')}</dl>`;
+};
+
+const renderChannels = (doc, channelsState) => {
+  doc.channels.list.innerHTML = channelsState.length
+    ? genHTMLLinkList(channelsState)
     : `<p class="text-muted">${i18next.t('channels.noChannels')}</p>`;
 };
 
-const renderPosts = (doc, postsState, i18next) => {
-  const postsHTML = postsState.map(({ title, description, link }) => [
-    `<dt><a href="${link}">${title}</a></dt>`,
-    `<dd>${description}</dd>`,
-  ].join(''));
-  doc.posts.list.innerHTML = postsHTML.length
-    ? postsHTML.join('<hr>')
+const renderPosts = (doc, postsState) => {
+  doc.posts.list.innerHTML = postsState.length
+    ? genHTMLLinkList(postsState)
     : `<p class="text-muted">${i18next.t('posts.noPosts')}</p>`;
 };
 

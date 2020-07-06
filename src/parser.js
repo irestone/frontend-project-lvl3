@@ -1,20 +1,24 @@
 import _ from 'lodash';
 
+const getTextContent = (node, selector) => {
+  return _.trim(node.querySelector(selector).textContent);
+};
+
 const parseRSSXML = (xml) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, 'application/xml');
 
   const channel = {
-    title: _.trim(doc.querySelector('channel > title').textContent),
-    description: _.trim(doc.querySelector('channel > description').textContent),
-    link: _.trim(doc.querySelector('channel > link').textContent),
+    title: getTextContent(doc, 'channel > title'),
+    description: getTextContent(doc, 'channel > description'),
+    link: getTextContent(doc, 'channel > link'),
   };
 
   const posts = [...doc.querySelectorAll('item')].map((itemEl) => ({
-    id: _.trim(itemEl.querySelector('guid').textContent),
-    title: _.trim(itemEl.querySelector('title').textContent),
-    description: _.trim(itemEl.querySelector('description').textContent),
-    link: _.trim(itemEl.querySelector('link').textContent),
+    id: getTextContent(itemEl, 'guid'),
+    title: getTextContent(itemEl, 'title'),
+    description: getTextContent(itemEl, 'description'),
+    link: getTextContent(itemEl, 'link'),
   }));
 
   return { channel, posts };
