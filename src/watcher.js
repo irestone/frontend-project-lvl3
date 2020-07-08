@@ -1,10 +1,10 @@
 import {
-  renderRSSFormFilling, renderRSSFormSubmission, renderChannels, renderPosts, insertTexts,
+  renderRSSForm, renderRSSFormURLInputValue, renderChannels, renderPosts, insertTexts,
 } from './renderers';
 
 const renderersMapping = {
-  'rssForm.fillingState': renderRSSFormFilling,
-  'rssForm.submissionState': renderRSSFormSubmission,
+  'rssForm.channelAddingProcess': renderRSSForm,
+  'rssForm.url': renderRSSFormURLInputValue,
   channels: renderChannels,
   posts: renderPosts,
 };
@@ -18,7 +18,8 @@ const createWatcher = (doc) => (path, value) => {
 
 const initRender = (doc, state) => {
   insertTexts(doc);
-  renderRSSFormFilling(doc, state.rssForm.fillingState);
+  renderRSSForm(doc, state.rssForm.channelAddingProcess);
+  renderRSSFormURLInputValue(doc, state.rssForm.url);
   renderChannels(doc, state.channels);
   renderPosts(doc, state.posts);
 };

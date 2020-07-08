@@ -21,16 +21,8 @@ const insertTexts = (doc) => {
 //  RSS FORM
 // =====================================
 
-const resetRSSForm = (doc) => {
-  doc.rssForm.submitButton.removeAttribute('disabled');
-  doc.rssForm.urlInput.removeAttribute('disabled');
-  doc.rssForm.urlInput.classList.remove('is-invalid');
-  doc.feedback.innerHTML = '';
-};
-
-const renderRSSFormFillingMapping = {
+const renderRSSFormMapping = {
   empty: (doc) => {
-    doc.rssForm.urlInput.value = '';
     doc.rssForm.submitButton.setAttribute('disabled', true);
   },
   invalid: (doc, { errors }) => {
@@ -40,17 +32,7 @@ const renderRSSFormFillingMapping = {
       return `<small class="text-danger">${i18next.t(error)}</small>`;
     }).join('<br>');
   },
-  valid: () => {},
-};
-
-const renderRSSFormFilling = (doc, fillingState) => {
-  resetRSSForm(doc);
-  const render = renderRSSFormFillingMapping[fillingState.state];
-  render(doc, fillingState);
-};
-
-const renderRSSFormSubmissionMapping = {
-  idle: () => {},
+  valid: () => { },
   sending: (doc) => {
     doc.rssForm.urlInput.setAttribute('disabled', true);
     doc.rssForm.submitButton.setAttribute('disabled', true);
@@ -65,10 +47,19 @@ const renderRSSFormSubmissionMapping = {
   },
 };
 
-const renderRSSFormSubmission = (doc, submissionState) => {
-  resetRSSForm(doc);
-  const render = renderRSSFormSubmissionMapping[submissionState.state];
-  render(doc, submissionState);
+const renderRSSForm = (doc, channelAddingProcess) => {
+  // reset
+  doc.rssForm.submitButton.removeAttribute('disabled');
+  doc.rssForm.urlInput.removeAttribute('disabled');
+  doc.rssForm.urlInput.classList.remove('is-invalid');
+  doc.feedback.innerHTML = '';
+
+  const render = renderRSSFormMapping[channelAddingProcess.state];
+  render(doc, channelAddingProcess);
+};
+
+const renderRSSFormURLInputValue = (doc, url) => {
+  doc.rssForm.urlInput.value = url;
 };
 
 // =====================================
@@ -99,5 +90,5 @@ const renderPosts = (doc, postsState) => {
 };
 
 export {
-  insertTexts, renderRSSFormFilling, renderRSSFormSubmission, renderChannels, renderPosts,
+  insertTexts, renderRSSForm, renderRSSFormURLInputValue, renderChannels, renderPosts,
 };

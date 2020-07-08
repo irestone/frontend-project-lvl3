@@ -37,12 +37,8 @@ export default (document) => {
   const state = onChange(
     {
       rssForm: {
-        fillingState: {
-          state: 'empty', // empty | valid/invalid
-          errors: [],
-        },
-        submissionState: {
-          state: 'idle', // idle | sending | failed/succeeded
+        channelAddingProcess: {
+          state: 'empty', // empty | valid/invalid | sending | failed/succeeded
           errors: [],
         },
         url: '',

@@ -80,36 +80,35 @@ const handleRSSFormUpdate = (state, url) => {
   state.rssForm.url = url;
 
   if (!url) {
-    state.rssForm.fillingState = { state: 'empty', errors: [] };
+    state.rssForm.channelAddingProcess = { state: 'empty', errors: [] };
     return;
   }
 
   validateRSSForm(url, state.channels)
     .then(() => {
-      state.rssForm.fillingState = { state: 'valid', errors: [] };
+      state.rssForm.channelAddingProcess = { state: 'valid', errors: [] };
     })
     .catch(({ errors }) => {
-      state.rssForm.fillingState = { state: 'invalid', errors };
+      state.rssForm.channelAddingProcess = { state: 'invalid', errors };
     });
 };
 
 const handleChannelSubmission = (state) => {
-  if (state.rssForm.fillingState.state !== 'valid') {
+  if (state.rssForm.channelAddingProcess.state !== 'valid') {
     return;
   }
 
-  state.rssForm.submissionState = { state: 'sending', errors: [] };
+  state.rssForm.channelAddingProcess = { state: 'sending', errors: [] };
 
   axios.get(makeCORSedUrl(state.rssForm.url))
     .then(({ data }) => {
       const feed = parseRSSXML(data);
       addFeed(state, feed, state.rssForm.url);
+      state.rssForm.channelAddingProcess = { state: 'succeeded', errors: [] };
       state.rssForm.url = '';
-      state.rssForm.fillingState = { state: 'empty', errors: [] };
-      state.rssForm.submissionState = { state: 'succeeded', errors: [] };
     })
     .catch(() => {
-      state.rssForm.submissionState = {
+      state.rssForm.channelAddingProcess = {
         state: 'failed',
         errors: ['errors.unexpected'],
       };
