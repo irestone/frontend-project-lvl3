@@ -65,7 +65,7 @@ export default (document) => {
   // Mounting
 
 
-  const watchChannels = (state) => {
+  const watchChannels = () => {
     setTimeout(() => {
       const updateRequests = state.channels
         .map((channel) => updateChannelPosts(state, channel));
