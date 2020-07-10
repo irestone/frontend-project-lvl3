@@ -24,4 +24,4 @@ const parseRSSXML = (xml) => {
   return { channel, posts };
 };
 
-export { parseRSSXML };
+export default parseRSSXML;

@@ -1,65 +1,69 @@
+/* eslint no-param-reassign: 0 */
+
 import i18next from 'i18next';
 
 // =====================================
 //  TEXTS
 // =====================================
 
-const insertTexts = (doc) => {
-  doc.pageTitle.innerText = i18next.t('pageTitle');
-  doc.title.innerText = i18next.t('title');
-  doc.lead.innerText = i18next.t('lead');
-  doc.rssForm.urlInput.setAttribute(
+const insertTexts = (documentElements) => {
+  documentElements.pageTitle.innerText = i18next.t('pageTitle');
+  documentElements.title.innerText = i18next.t('title');
+  documentElements.lead.innerText = i18next.t('lead');
+  documentElements.rssForm.urlInput.setAttribute(
     'placeholder',
     i18next.t('rssForm.url.placeholder'),
   );
-  doc.rssForm.submitButton.innerText = i18next.t('rssForm.submit');
-  doc.channels.title.innerText = i18next.t('channels.title');
-  doc.posts.title.innerText = i18next.t('posts.title');
+  documentElements.rssForm.submitButton.innerText = i18next.t('rssForm.submit');
+  documentElements.channels.title.innerText = i18next.t('channels.title');
+  documentElements.posts.title.innerText = i18next.t('posts.title');
 };
 
 // =====================================
 //  RSS FORM
 // =====================================
 
+const renderRSSFormErrors = (documentElements, errors) => {
+  documentElements.feedback.innerHTML = errors.map((error) => {
+    return `<small class="text-danger">${i18next.t(error)}</small>`;
+  }).join('<br>');
+};
+
 const renderRSSFormMapping = {
-  empty: (doc) => {
-    doc.rssForm.submitButton.setAttribute('disabled', true);
+  empty: (documentElements) => {
+    documentElements.rssForm.submitButton.setAttribute('disabled', true);
   },
-  invalid: (doc, { errors }) => {
-    doc.rssForm.urlInput.classList.add('is-invalid');
-    doc.rssForm.submitButton.setAttribute('disabled', true);
-    doc.feedback.innerHTML = errors.map((error) => {
-      return `<small class="text-danger">${i18next.t(error)}</small>`;
-    }).join('<br>');
+  invalid: (documentElements, { errors }) => {
+    documentElements.rssForm.urlInput.classList.add('is-invalid');
+    documentElements.rssForm.submitButton.setAttribute('disabled', true);
+    renderRSSFormErrors(documentElements, errors);
   },
   valid: () => { },
-  sending: (doc) => {
-    doc.rssForm.urlInput.setAttribute('disabled', true);
-    doc.rssForm.submitButton.setAttribute('disabled', true);
+  sending: (documentElements) => {
+    documentElements.rssForm.urlInput.setAttribute('disabled', true);
+    documentElements.rssForm.submitButton.setAttribute('disabled', true);
   },
-  succeeded: (doc) => {
-    doc.feedback.innerHTML = `<p class="text-success mt-3">${i18next.t('rssForm.success')}</>`;
+  succeeded: (documentElements) => {
+    documentElements.feedback.innerHTML = `<p class="text-success mt-3">${i18next.t('rssForm.success')}</>`;
   },
-  failed: (doc, { errors }) => {
-    doc.feedback.innerHTML = errors.map((error) => {
-      return `<small class="text-danger">${i18next.t(error)}</small>`;
-    }).join('<br>');
+  failed: (documentElements, { errors }) => {
+    renderRSSFormErrors(documentElements, errors);
   },
 };
 
-const renderRSSForm = (doc, channelAddingProcess) => {
+const renderRSSForm = (documentElements, channelAddingProcess) => {
   // reset
-  doc.rssForm.submitButton.removeAttribute('disabled');
-  doc.rssForm.urlInput.removeAttribute('disabled');
-  doc.rssForm.urlInput.classList.remove('is-invalid');
-  doc.feedback.innerHTML = '';
+  documentElements.rssForm.submitButton.removeAttribute('disabled');
+  documentElements.rssForm.urlInput.removeAttribute('disabled');
+  documentElements.rssForm.urlInput.classList.remove('is-invalid');
+  documentElements.feedback.innerHTML = '';
 
   const render = renderRSSFormMapping[channelAddingProcess.state];
-  render(doc, channelAddingProcess);
+  render(documentElements, channelAddingProcess);
 };
 
-const renderRSSFormURLInputValue = (doc, url) => {
-  doc.rssForm.urlInput.value = url;
+const renderRSSFormURLInputValue = (documentElements, url) => {
+  documentElements.rssForm.urlInput.value = url;
 };
 
 // =====================================
@@ -77,14 +81,14 @@ const genHTMLLinkList = (list) => {
   return `<dl>${rows.join('<hr>')}</dl>`;
 };
 
-const renderChannels = (doc, channelsState) => {
-  doc.channels.list.innerHTML = channelsState.length
+const renderChannels = (documentElements, channelsState) => {
+  documentElements.channels.list.innerHTML = channelsState.length
     ? genHTMLLinkList(channelsState)
     : `<p class="text-muted">${i18next.t('channels.noChannels')}</p>`;
 };
 
-const renderPosts = (doc, postsState) => {
-  doc.posts.list.innerHTML = postsState.length
+const renderPosts = (documentElements, postsState) => {
+  documentElements.posts.list.innerHTML = postsState.length
     ? genHTMLLinkList(postsState)
     : `<p class="text-muted">${i18next.t('posts.noPosts')}</p>`;
 };

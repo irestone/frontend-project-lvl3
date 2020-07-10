@@ -1,8 +1,10 @@
+/* eslint no-param-reassign: 0 */
+
 import * as yup from 'yup';
 import axios from 'axios';
 import _ from 'lodash';
 
-import { parseRSSXML } from './parser';
+import parseRSSXML from './RSSXMLParser';
 
 const makeCORSedUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
 
@@ -11,8 +13,6 @@ const makeCORSedUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
 // =====================================
 
 const validateRSSForm = (url, channels) => {
-  // ? how to optimize this? (scheme creation)
-  // ? can i pass the state (as a context) to .validate()?
   const rssFormURLSchema = yup
     .string()
     .required('rssForm.url.validationErrors.required')
@@ -62,16 +62,6 @@ const updateChannelPosts = (state, channel) => {
     });
 };
 
-const watchChannels = (state) => {
-  const updateFrequency = 5000;
-  setTimeout(() => {
-    const updateRequests = state.channels
-      .map((channel) => updateChannelPosts(state, channel));
-    Promise.all(updateRequests)
-      .finally(() => watchChannels(state, updateFrequency));
-  }, updateFrequency);
-};
-
 // =====================================
 //  HANDLERS
 // =====================================
@@ -118,5 +108,5 @@ const handleChannelSubmission = (state) => {
 export {
   handleRSSFormUpdate,
   handleChannelSubmission,
-  watchChannels,
+  updateChannelPosts,
 };

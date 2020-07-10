@@ -5,14 +5,16 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import I18nextBrowserLanguageDetector from 'i18next-browser-languagedetector';
 
-import { handleRSSFormUpdate, handleChannelSubmission, watchChannels } from './controllers';
+import { handleRSSFormUpdate, handleChannelSubmission, updateChannelPosts } from './controllers';
 import locales from './locales';
 import { createWatcher, initRender } from './watcher';
 
 export default (document) => {
+  const FEED_UPDATE_FREQUENCY = 5000;
+
   // Collecting DOM elements
 
-  const doc = {
+  const documentElements = {
     pageTitle: document.getElementById('page-title'),
     title: document.getElementById('title'),
     lead: document.getElementById('lead'),
@@ -46,27 +48,37 @@ export default (document) => {
       channels: [],
       posts: [],
     },
-    createWatcher(doc),
+    createWatcher(documentElements),
   );
 
   // Assigning controllers
 
-  doc.rssForm.urlInput.oninput = (e) => {
+  documentElements.rssForm.urlInput.oninput = (e) => {
     handleRSSFormUpdate(state, _.trim(e.target.value));
   };
 
-  doc.rssForm.form.onsubmit = (e) => {
+  documentElements.rssForm.form.onsubmit = (e) => {
     e.preventDefault();
     handleChannelSubmission(state);
   };
 
   // Mounting
 
+
+  const watchChannels = (state) => {
+    setTimeout(() => {
+      const updateRequests = state.channels
+        .map((channel) => updateChannelPosts(state, channel));
+      Promise.all(updateRequests)
+        .finally(() => watchChannels(state, FEED_UPDATE_FREQUENCY));
+    }, FEED_UPDATE_FREQUENCY);
+  };
+
   i18next
     .use(I18nextBrowserLanguageDetector)
     .init({ debug: true, fallbackLng: 'ru', resources: locales })
     .then(() => {
-      initRender(doc, state);
+      initRender(documentElements, state);
       watchChannels(state);
     });
 };
