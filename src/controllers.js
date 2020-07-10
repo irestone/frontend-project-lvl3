@@ -12,7 +12,7 @@ const makeCORSedUrl = (url) => `https://cors-anywhere.herokuapp.com/${url}`;
 //  RSS FORM
 // =====================================
 
-const validateRSSForm = (url, channels) => {
+const validateRSSForm = (rssUrl, channels) => {
   const rssFormURLSchema = yup
     .string()
     .required('rssForm.url.validationErrors.required')
@@ -23,7 +23,7 @@ const validateRSSForm = (url, channels) => {
       (url) => !channels.some((channel) => channel.url === url),
     );
 
-  return rssFormURLSchema.validate(url);
+  return rssFormURLSchema.validate(rssUrl);
 };
 
 // =====================================
