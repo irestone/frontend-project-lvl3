@@ -93,6 +93,37 @@ const renderPosts = (documentElements, postsState) => {
     : `<p class="text-muted">${i18next.t('posts.noPosts')}</p>`;
 };
 
+// =====================================
+//  WATCHER
+// =====================================
+
+const renderersMapping = {
+  'rssForm.channelAddingProcess': renderRSSForm,
+  'rssForm.url': renderRSSFormURLInputValue,
+  channels: renderChannels,
+  posts: renderPosts,
+};
+
+const createWatcher = (doc) => (path, value) => {
+  const render = renderersMapping[path];
+  if (render) {
+    render(doc, value);
+  }
+};
+
+// =====================================
+//  INITIAL RENDERER
+// =====================================
+
+const initRender = (doc, state) => {
+  insertTexts(doc);
+  renderRSSForm(doc, state.rssForm.channelAddingProcess);
+  renderRSSFormURLInputValue(doc, state.rssForm.url);
+  renderChannels(doc, state.channels);
+  renderPosts(doc, state.posts);
+};
+
 export {
-  insertTexts, renderRSSForm, renderRSSFormURLInputValue, renderChannels, renderPosts,
+  createWatcher,
+  initRender,
 };
