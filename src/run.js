@@ -7,11 +7,21 @@ import I18nextBrowserLanguageDetector from 'i18next-browser-languagedetector';
 
 import { handleRSSFormUpdate, handleChannelSubmission, updateChannelPosts } from './controllers';
 import locales from './locales';
-import { createWatcher, initRender } from './watcher';
+import { createWatcher, initRender } from './renderers';
 
-export default (document) => {
+
+const watchChannels = (state) => {
   const FEED_UPDATE_FREQUENCY = 5000;
 
+  setTimeout(() => {
+    const updateRequests = state.channels
+      .map((channel) => updateChannelPosts(state, channel));
+    Promise.all(updateRequests)
+      .finally(() => watchChannels(state));
+  }, FEED_UPDATE_FREQUENCY);
+};
+
+export default (document) => {
   // Collecting DOM elements
 
   const documentElements = {
@@ -63,16 +73,6 @@ export default (document) => {
   };
 
   // Mounting
-
-
-  const watchChannels = () => {
-    setTimeout(() => {
-      const updateRequests = state.channels
-        .map((channel) => updateChannelPosts(state, channel));
-      Promise.all(updateRequests)
-        .finally(() => watchChannels(state, FEED_UPDATE_FREQUENCY));
-    }, FEED_UPDATE_FREQUENCY);
-  };
 
   i18next
     .use(I18nextBrowserLanguageDetector)
