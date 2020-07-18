@@ -34,7 +34,7 @@ const addFeed = (state, feed, url) => {
   const channelId = _.uniqueId('channel-');
   const channel = { ...feed.channel, id: channelId, url };
   const posts = feed.posts.map((post) => ({ ...post, channelId }));
-  state.channels = [channel, ...state.channels];
+  state.channels.unshift(channel);
   state.posts = [...posts, ...state.posts];
 };
 
