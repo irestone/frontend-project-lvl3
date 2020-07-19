@@ -19,7 +19,7 @@ const validateRSSForm = (rssUrl, channels) => {
     .url('rssForm.url.validationErrors.invalidUrl')
     .notOneOf(
       channels.map(({ url }) => url),
-      'rssForm.url.validationErrors.notUnique'
+      'rssForm.url.validationErrors.notUnique',
     );
 
   return rssFormURLSchema.validate(rssUrl);
@@ -43,8 +43,8 @@ const updateChannelPosts = (state, channel) => {
       const feed = parseRSSXML(data);
       const channelPosts = _.filter(state.posts, { channelId: channel.id });
       const newPosts = _.differenceBy(feed.posts, channelPosts, 'id')
-        .map((post) => ({ ...post, channelId: channel.id, }));
-      state.posts.unshift(...newPosts)
+        .map((post) => ({ ...post, channelId: channel.id }));
+      state.posts.unshift(...newPosts);
     });
 };
 
