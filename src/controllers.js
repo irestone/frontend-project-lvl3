@@ -35,26 +35,17 @@ const addFeed = (state, feed, url) => {
   const channel = { ...feed.channel, id: channelId, url };
   const posts = feed.posts.map((post) => ({ ...post, channelId }));
   state.channels.unshift(channel);
-  state.posts = [...posts, ...state.posts];
+  state.posts.unshift(...posts);
 };
 
 const updateChannelPosts = (state, channel) => {
   return axios.get(makeCORSedUrl(channel.url))
     .then(({ data }) => {
-      const channelPosts = _.filter(state.posts, { channelId: channel.id });
       const feed = parseRSSXML(data);
-      const newPostsFromFeed = _.differenceBy(feed.posts, channelPosts, 'id');
-
-      if (!newPostsFromFeed.length) {
-        return;
-      }
-
-      const newChannelPosts = newPostsFromFeed.map((post) => ({
-        ...post,
-        channelId: channel.id,
-      }));
-
-      state.posts = [...newChannelPosts, ...state.posts];
+      const channelPosts = _.filter(state.posts, { channelId: channel.id });
+      const newPosts = _.differenceBy(feed.posts, channelPosts, 'id')
+        .map((post) => ({ ...post, channelId: channel.id, }));
+      state.posts.unshift(...newPosts)
     });
 };
 
