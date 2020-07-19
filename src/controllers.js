@@ -17,10 +17,9 @@ const validateRSSForm = (rssUrl, channels) => {
     .string()
     .required('rssForm.url.validationErrors.required')
     .url('rssForm.url.validationErrors.invalidUrl')
-    .test(
-      'is-unique-channel',
-      'rssForm.url.validationErrors.notUnique',
-      (url) => !channels.some((channel) => channel.url === url),
+    .notOneOf(
+      channels.map(({ url }) => url),
+      'rssForm.url.validationErrors.notUnique'
     );
 
   return rssFormURLSchema.validate(rssUrl);
